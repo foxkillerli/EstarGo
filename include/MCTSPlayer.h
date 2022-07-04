@@ -9,17 +9,17 @@
 #include <string>
 #include <vector>
 #include <thread>
-
-#include "mcts_tree.h"
-#include "evaluator.h"
-#include "Config.h"
-#include "goboard2.h"
-#include "utils/Executor.h"
-#include "Config.h"
 #include <cstring>
-#include "symmetry.h"
 #include <random>
 #include <chrono>
+
+#include "MCTSTree.h"
+#include "evaluator.h"
+#include "Config.h"
+#include "GoBoard.h"
+#include "utils/Executor.h"
+#include "Config.h"
+#include "Symmetry.h"
 
 /**
  * A player with Monte-Carlo Tree Search that uses a tree policy that gives prior probability of each node and a default policy that estimates the win rate of each node.
