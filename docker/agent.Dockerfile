@@ -9,7 +9,8 @@ RUN apt-get install -y build-essential \
     cmake \
     rsync \
     tar \
-    python
+    python \
+    libgflags-dev
 RUN apt-get install -y openssh-server
 RUN mkdir /var/run/sshd
 RUN sed -ri 's/^PermitRootLogin\s+.*/PermitRootLogin yes/g' /etc/ssh/sshd_config
