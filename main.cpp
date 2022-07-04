@@ -3,8 +3,8 @@
 //
 #include <iostream>
 #include <gflags/gflags.h>
-#include "logger.h"
-#include "src/gtp.h"
+#include "utils/Logger.h"
+#include "include/Gtp.h"
 #include "config.h"
 
 using std::cout;

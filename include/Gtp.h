@@ -8,11 +8,11 @@
 
 #include <cstdio>
 #include <string>
-#include "goboard2.h"
-#include "config.h"
-#include "executor.h"
-#include "mctsplayer.h"
-#include "logger.h"
+#include "GoBoard.h"
+#include "Config.h"
+#include "utils/Executor.h"
+#include "MCTSPlayer.h"
+#include "utils/Logger.h"
 
 //#include <grpc++/grpc++.h>
 

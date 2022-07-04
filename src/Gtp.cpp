@@ -2,14 +2,13 @@
 // Created by Kaihua Li on 2022/7/3.
 //
 
-#include "gtp.h"
+#include "../include/Gtp.h"
 #include <cstring>
 #include <string>
 #include <chrono>
 #include <thread>
-#include "mctsplayer.h"
-#include "tensorrt_eval.h"
-#include "logger.h"
+#include "../include/MCTSPlayer.h"
+#include "utils/Logger.h"
 #include "utils.h"
 
 using std::endl;
