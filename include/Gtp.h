@@ -24,7 +24,7 @@ public:
     GTP() {
         mctsplayer = 0;
         tmp_mctsplayer = 0;
-        executor=new Executor(Config::n_thread());
+        executor = new Executor(Config::n_thread());
         is_pondering=0;
     }
 

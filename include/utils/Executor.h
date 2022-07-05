@@ -86,17 +86,17 @@ public:
 
 private:
     // get one task
-    Task getTask() {
+    Task get_task() {
         std::unique_lock<std::mutex> lock {mTaskQueueMutex};
         cv_task.wait(lock, [this](){ return !mTaskQueue.empty();} );
-        Task task {std::move(mTaskQueue.front())};
+        Task task { std::move(mTaskQueue.front()) };
         mTaskQueue.pop();
         return task;
     }
 
     void schedule() {
         while(true && !exit) {
-            if (Task task = getTask()) {
+            if (Task task = get_task()) {
                 task();
             } else {
                 // return;   // done

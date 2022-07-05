@@ -17,8 +17,7 @@
 #include "Utils.h"
 
 extern "C" {
-#include "board.h"
-#include "mq.h"
+#include "../lib/pachi/board.h"
 }
 
 
@@ -82,9 +81,6 @@ private:
     void _recompute_libs(board* b, group_t g);
     bool _surround_by_atari_group(group_t g);
     void _update_feature(int my_color_int);
-
-
-
 
 public:
     static const int COLOR_BLACK=0;

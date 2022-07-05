@@ -20,6 +20,7 @@ endif()
 
 configure_file(conf/Gtp.h.in include/Gtp.h)
 ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/src)
+ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/lib/pachi)
 ADD_EXECUTABLE(estar_go main.cpp)
 target_include_directories(estar_go PUBLIC "${PROJECT_BINARY_DIR}")
 target_include_directories(estar_go PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
