@@ -17,7 +17,8 @@
 #include "Utils.h"
 
 extern "C" {
-#include "../lib/pachi/board.h"
+#include "../external/pachi/board.h"
+#include "../external/pachi/board.c"
 }
 
 
@@ -122,8 +123,8 @@ public:
     }
 #endif
 
-    GoBoard(float komi){
-        b=board_init(NULL);
+    GoBoard(float komi, int size){
+        b = board_new(size, NULL);
         char rule[100]="chinese";
         board_set_rules(b, rule);
         board_resize(b,19);

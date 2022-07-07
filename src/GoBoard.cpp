@@ -6,17 +6,18 @@
 #include <algorithm>
 #include <cmath>
 #include "GoBoard.h"
-#include "utils.h"
+#include "../include/Utils.h"
 #include "utils/Logger.h"
 
 extern "C" {
-#include "board.h"
-#include "tactics/ladder.h"
-#include "tactics/nakade.h"
-#include "tactics/selfatari.h"
-#include "tactics/dragon.h"
-#include "tactics/2lib.h"
-#include "tactics/1lib.h"
+#include "../../external/pachi/board.h"
+#include "../../external/pachi/move.h"
+#include "../../external/pachi/tactics/ladder.h"
+#include "../../external/pachi/tactics/nakade.h"
+#include "../../external/pachi/tactics/selfatari.h"
+#include "../../external/pachi/tactics/dragon.h"
+#include "../../external/pachi/tactics/2lib.h"
+#include "../../external/pachi/tactics/1lib.h"
 }
 
 bool GoBoard::apply_move(int action) {
@@ -33,14 +34,14 @@ bool GoBoard::apply_move(int action) {
 }
 
 bool GoBoard::_apply_move(int action, int color) {
-    struct move m;
-    m.color = color==COLOR_BLACK ? S_BLACK : S_WHITE;
-    m.coord = coord_xy(b,action%19+1,action/19+1);
-    bool succ=true;
+    move_t m;
+    m.color = color == COLOR_BLACK ? S_BLACK : S_WHITE;
+    m.coord = coord_xy(action % 19+1,action / 19+1);
+    bool succ = true;
     if (board_is_valid_move(b, &m)){
         board_play(b, &m);
     }else{
-        succ=false;
+        succ = false;
     }
     uint64_t cur_hash = get_hash();
     if(!check_repetition(cur_hash)){

@@ -22,7 +22,7 @@
 #include "utils.h"
 #include "evaluator.h"
 #include "utils/Logger.h"
-#include "../include/Config.h"
+#include "utils/Config.h"
 
 using namespace std;
 

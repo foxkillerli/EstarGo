@@ -1,14 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(estar_go VERSION 1.0)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug )
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3 -pthread" )
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-LINK_DIRECTORIES( ${PROJECT_SOURCE_DIR}/lib)
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/include)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O2 -pthread -Wall " )
 
 #--------------------------- PLATFORM SPECIFIC -------------------------------------------------------------------------
 
@@ -17,10 +13,13 @@ if(APPLE)
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
 endif()
+ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/src)
+ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/external/pachi)
 
 configure_file(conf/Gtp.h.in include/Gtp.h)
-ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/src)
-ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/lib/pachi)
-ADD_EXECUTABLE(estar_go main.cpp)
-target_include_directories(estar_go PUBLIC "${PROJECT_BINARY_DIR}")
-target_include_directories(estar_go PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+ADD_EXECUTABLE(estar_go ${PROJECT_SOURCE_DIR} ../main.cpp)
+target_link_libraries(${PROJECT_NAME} PUBLIC pachi)
+target_include_directories(estar_go PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(estar_go PUBLIC ${PROJECT_SOURCE_DIR}/external/pachi)
+

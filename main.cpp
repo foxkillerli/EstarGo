@@ -3,14 +3,14 @@
 //
 #include <iostream>
 #include <gflags/gflags.h>
-#include "utils/Logger.h"
+#include "include/utils/Logger.h"
 #include "include/Gtp.h"
-#include "config.h"
+#include "include/utils/Config.h"
 
 using std::cout;
 using std::endl;
 
-DEFINE_string(config, "conf/1c1g.conf", "config file pathname");
+DEFINE_string(config, "conf/conf.ini", "config file pathname");
 DEFINE_string(log_config, "conf/log.conf", "log config file pathname");
 DEFINE_string(log_output, "/tmp/estar_go_log", "log output file pathname");
 DEFINE_string(history, "", "history for bad case test, or continue playing");
@@ -19,7 +19,7 @@ DEFINE_string(win_rate_file, "", "output min win rate file path");
 
 int main(int argc, char *argv[]) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
-    InitLogger(FLAGS_logconfig, FLAGS_logoutput);
+    InitLogger(FLAGS_log_config, FLAGS_log_output);
 
     Config::Sinit(FLAGS_config);
     LOG_INFO(Config::OutputConfig());

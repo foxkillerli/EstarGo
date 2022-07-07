@@ -1,9 +1,9 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
+
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime
 RUN apt-get update
 RUN apt-get install -y build-essential \
     ssh \
-    gcc \
-    g++ \
     gdb \
     clang \
     cmake \

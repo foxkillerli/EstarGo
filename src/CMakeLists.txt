@@ -1,18 +1,11 @@
 PROJECT(estar_go)
 
 SET(ESTAR_GO_SRCS
-        utils/Logger.cpp
-        utils/INIReader.cpp
-        utils/Ini.cpp
         Config.cpp
         Gtp.cpp
         GoBoard.cpp
         MCTSPlayer.cpp
-        MCTSTree.cpp
-        Utils.cpp)
-
-#ADD_LIBRARY(estar_go_lib SHARED ${ESTAR_GO_SRCS})
-#ADD_LIBRARY(estar_go_static STATIC ${ESTAR_GO_SRCS})
-#SET_TARGET_PROPERTIES(estar_go_static PROPERTIES OUTPUT_NAME "estar_go_lib")
-#SET_TARGET_PROPERTIES(estar_go_lib PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-#SET_TARGET_PROPERTIES(estar_go_static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+        MCTSTree.cpp)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/external/pachi)
+link_directories(${PROJECT_SOURCE_DIR}/external/pachi)

@@ -4,10 +4,9 @@
 
 #ifndef ESTAR_GO_INIREADER_H
 #define ESTAR_GO_INIREADER_H
-
-#include <map>
-#include <set>
-#include <string>
+#include<set>
+#include<map>
+#include<string>
 
 // Read an INI file into easy-to-access name/value pairs. (Note that I've gone
 // for simplicity here rather than speed, but it should be pretty decent.)
