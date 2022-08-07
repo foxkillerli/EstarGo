@@ -8,8 +8,9 @@
 #include <chrono>
 #include <thread>
 #include "../include/MCTSPlayer.h"
-#include "utils/Logger.h"
-#include "utils.h"
+#include "../include/utils/Logger.h"
+#include "../include/Utils.h"
+#include "../include/utils/Config.h"
 
 using std::endl;
 using std::string;
@@ -18,13 +19,10 @@ using std::string;
  * Sets the AI player as the one specified in config file.
  */
 void GTP::initialize(string history) {
-    if (!Config::use_server_evaluator()) {
-        // TODO: finish remote eval calls
-    }
-    mctsplayer = new MCTSPlayer(executor, history);
+    mcts_player = new MCTSPlayer(executor, history);
     my_name = Config::gtp_name();
     my_version = Config::gtp_version();
-    is_pondering=Config::is_pondering();
+    is_pondering = Config::is_pondering();
     is_lcmd_genmove = false;
 }
 
@@ -49,17 +47,17 @@ constexpr hash_t hash_compile_time(char const* str, hash_t last_value = basis)
 // helper function end
 
 void GTP::process_cmd_play(char command[]) {
-    mctsplayer->stop_pondering();
+    mcts_player->stop_pondering();
     LOG_INFO("pondering stopped.");
     char pos[5];
     char col[5];
     sscanf(command, "%*s %s %s", col, pos);
-    mctsplayer->play(pos);
+    mcts_player->play(pos);
     gtp_print("");
     if (strcasecmp(pos,"RESIGN")==0){
-        if (mctsplayer) {
-            delete mctsplayer;
-            mctsplayer = 0;
+        if (mcts_player) {
+            delete mcts_player;
+            mcts_player = 0;
         }
     }
     is_lcmd_genmove = false;
@@ -67,26 +65,26 @@ void GTP::process_cmd_play(char command[]) {
 }
 
 void GTP::process_cmd_genmove(char command[]) {
-    mctsplayer->stop_pondering();
+    mcts_player->stop_pondering();
     LOG_INFO("pondering stopped.");
     if(is_lcmd_genmove){
         char s[10]="PASS";
-        mctsplayer->play(s);
+        mcts_player->play(s);
         LOG_INFO("opponent implicit pass");
-        //mctsplayer->stop_pondering();
+        //mcts_player->stop_pondering();
     }
     char color[5];
     sscanf(command, "%*s %s", color);
-    string s_pos = mctsplayer->gen_apply_move();
+    string s_pos = mcts_player->gen_apply_move();
     gtp_print(s_pos.c_str());
     if(is_pondering && strcasecmp(s_pos.c_str(),"resign")!=0){
-        mctsplayer->start_pondering();
+        mcts_player->start_pondering();
     }
     is_lcmd_genmove=true;
 }
 
 void GTP::process_cmd_showboard(char command[]){
-    gtp_print(mctsplayer->root_board->print_board_buffer().c_str());
+    gtp_print(mcts_player->root_board->print_board_buffer().c_str());
     //gtp_print("");
 }
 
@@ -95,22 +93,22 @@ void GTP::process_cmd_timeleft(char command[]) {
     sscanf(command, "%*s %s %s %s",color, time, stone );
     string color_received(1, color[0]);
     string color_str_upper = to_upper_string(color_received);
-    int n_player_color = GoBoard2::COLOR_BLACK;
+    int n_player_color = GoBoard::COLOR_BLACK;
     if (color_str_upper == "W") {
-        n_player_color = GoBoard2::COLOR_WHITE;
+        n_player_color = GoBoard::COLOR_WHITE;
     }
-    if (n_player_color == mctsplayer->get_color()) {
-        mctsplayer->time_left(atoi(time));
+    if (n_player_color == mcts_player->get_color()) {
+        mcts_player->time_left(atoi(time));
         LOG_INFO("Main Time Left: " << time << "s, Byo Left: " << stone);
     }
     gtp_print("");
 }
 
 void GTP::process_cmd_quit(char command[]) {
-    if (mctsplayer!=NULL) {
-        mctsplayer->stop_pondering();
-        delete mctsplayer;
-        mctsplayer = NULL;
+    if (mcts_player!=NULL) {
+        mcts_player->stop_pondering();
+        delete mcts_player;
+        mcts_player = NULL;
     }
     gtp_print("");
 }
@@ -124,7 +122,7 @@ void GTP::process_cmd_protocolversion(char command[]) {
 }
 
 void GTP::process_cmd_version(char command[]) {
-    gtp_print(estar_go_VERSION_MAJOR + "." + estar_go_VERSION_MINOR);
+    gtp_print(my_version.c_str());
 }
 
 void GTP::process_cmd_listcommands(char command[]) {
@@ -142,8 +140,6 @@ void GTP::process_cmd_listcommands(char command[]) {
             << GTP_CMD_KOMI << endl
             << GTP_FINAL_SCORE << endl
             << GTP_TIME_SETTINGS << endl
-            << GTP_CGOS_OPPONENT_NAME << endl
-            << GTP_CGOS_GAMEOVER << endl
             << GTP_SHOW_BOARD << endl;
     gtp_print(sstream.str().c_str());
 }
@@ -154,22 +150,22 @@ void GTP::process_cmd_boardsize(char command[]) {
 }
 
 void GTP::process_cmd_clearboard(char command[]) {
-    if (mctsplayer) {
-        mctsplayer->stop_pondering();
-        //delete mctsplayer;
-        //mctsplayer = NULL;
-        std::swap(mctsplayer, tmp_mctsplayer);
-        mctsplayer = NULL;
+    if (mcts_player) {
+        mcts_player->stop_pondering();
+        //delete mcts_player;
+        //mcts_player = NULL;
+        std::swap(mcts_player, tmp_mcts_player);
+        mcts_player = NULL;
         std::thread recycle = std::thread([&](){
-            delete tmp_mctsplayer;
-            tmp_mctsplayer = NULL;
+            delete tmp_mcts_player;
+            tmp_mcts_player = NULL;
         });
         recycle.detach();
     }
-    LOG_INFO("mctsplayer deleted");
+    LOG_INFO("mcts_player deleted");
     initialize();
     gtp_print("");
-    is_lcmd_genmove_ = false;
+    is_lcmd_genmove = false;
     LOG_INFO("clearboard finished.");
 }
 
@@ -179,7 +175,7 @@ void GTP::process_cmd_komi(char command[]) {
 }
 
 void GTP::process_cmd_finalscore(char command[]) {
-    float w=mctsplayer->get_final_score();
+    float w=mcts_player->get_final_score();
     char final_score[20];
     if(w>0){
         sprintf(final_score,"W+%.1f",w);

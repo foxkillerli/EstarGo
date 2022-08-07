@@ -14,15 +14,14 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
-#include <omp.h>
 #include <atomic>
 #include <vector>
 #include <cstdio>
-#include "latency.h"
-#include "utils.h"
-#include "evaluator.h"
-#include "utils/Logger.h"
-#include "utils/Config.h"
+#include "../include/Latency.h"
+#include "../include/Utils.h"
+#include "../include/utils/Logger.h"
+#include "../include/utils/Config.h"
+#include "../include/Eval_Def.h"
 
 using namespace std;
 
@@ -43,10 +42,10 @@ void MCTSPlayer::play(char *s_pos) {
 
     bool succ=false;
     if(strcasecmp(s_pos, "resign")==0){
-        succ=root_board->apply_move(GoBoard2::POS_PASS);
+        succ=root_board->apply_move(GoBoard::POS_PASS);
     }else{
         if (strcasecmp(s_pos, "pass")==0){
-            succ=root_board->apply_move(GoBoard2::POS_PASS);
+            succ=root_board->apply_move(GoBoard::POS_PASS);
             op_action=-1;
         }else{
             s_pos[0]=toupper(s_pos[0]);
@@ -165,69 +164,9 @@ void MCTSPlayer::rollout(int max){
         dynamic_timeout = 30000;
     }
 
-    //if (selfplay || selfplay_eval_rollout > 0) {
-    //  dynamic_rollout = 1600;
-    //  if (!selfplay) dynamic_rollout = selfplay_eval_rollout;
-    //  dynamic_timeout = 30000;
-    //}
-
-    if (selfplay == 1) {
-        dynamic_rollout = (root->edge != NULL) ? (selfplay_eval_rollout - root->edge->n + 1) : (selfplay_eval_rollout + 1);
-        dynamic_timeout = 30000;
-    } else {
-        if (selfplay_eval_rollout > 0) {
-            dynamic_rollout= selfplay_eval_rollout;
-            dynamic_timeout = 30000;
-        }
-    }
-
     long rollout_start_time=getutime();
     std::atomic<long> pending_reply{0};
     while(true) {
-        if (Config::selfplay() == 1 && !root->add_dirichlet && root->eval_ready){
-            root->add_dirichlet = true;
-            int nexts_size = root->nexts->size();
-            double alpha[nexts_size], prior[nexts_size];
-            for (int i = 0; i < nexts_size; ++i)
-                alpha[i] = 0.03;
-            memset(prior, 0, sizeof(prior));
-            gsl_ran_dirichlet(dirichlet_r, nexts_size, alpha, prior);
-
-            float p_sum = 0;
-            for (uint i = 0; i < root->nexts->size(); ++i)
-                p_sum += root->nexts->at(i)->edge->p;
-            LOG_INFO("prior sum before normalization: " << p_sum);
-            for (uint i = 0; i < root->nexts->size(); ++i)
-                root->nexts->at(i)->edge->p *= 1 / p_sum;
-
-            float sum = 0;
-            p_sum = 0;
-            stringstream sstream;
-            sstream << "dirichlet:";
-            float max_prob = 0.0;
-            for (uint i = 0; i < root->nexts->size(); ++i){
-                p_sum += root->nexts->at(i)->edge->p;
-                sstream << root->nexts->at(i)->edge->action << ":" << root->nexts->at(i)->edge->p << " ";
-                sstream << prior[i] << " ";
-                root->nexts->at(i)->edge->p = 0.75 * root->nexts->at(i)->edge->p + 0.25 * prior[i];
-                sstream << root->nexts->at(i)->edge->p;
-                sstream << " ";
-                sum += prior[i];
-                if (max_prob < prior[i]) {
-                    max_prob = prior[i];
-                    root->dirichlet_max_action = root->nexts->at(i)->edge->action;
-                }
-            }
-            int row = root->dirichlet_max_action/19;
-            int col = root->dirichlet_max_action%19;
-            char buf[2048];
-            snprintf(buf, 2048, "[dirich] max prob=%f, child size=%d, dirichlet_max_node=%c%d, action=%d, root_depth=%d\n", max_prob, root->nexts->size(), 'A' + col + (col >= 'I' - 'A'), row + 1, root->dirichlet_max_action,  root->depth);
-            LOG_INFO(buf);
-            LOG_INFO("sum_dirichlet: " << sum);
-            LOG_INFO("sum_prior: " << p_sum);
-            LOG_INFO(sstream.str());
-        }
-
         if(exit_flag){
             break;
         }
@@ -237,7 +176,7 @@ void MCTSPlayer::rollout(int max){
         }
         exit_flag=_mIsExitRollout;
         /* early exit of time policy*/
-        if(time_policy ==1 && max==1){
+        if(time_policy == 1 && max == 1){
             int max_n, sec_n;
             max_n = sec_n = -1;
             if (root != NULL && root->nexts != NULL) {
@@ -273,14 +212,8 @@ void MCTSPlayer::rollout(int max){
         }
 
         // rollout_in_turn++;
-        GoBoard2 cur_board(*root_board);
+        GoBoard cur_board(*root_board);
         NodePtr leaf;
-        /*
-        if (max==1){
-            leaf = mcts_select_path_root(root, virtual_loss, c_puct,max,&cur_board, dynamic_rollout - rollout_in_turn, 100*n_gpu);
-        }else{
-            leaf = mcts_select_path(root, virtual_loss, c_puct,max,&cur_board, 100*n_gpu);
-        }*/
 
         rollout_start_time=getutime();
         int select_depth = 0;
@@ -313,12 +246,8 @@ void MCTSPlayer::rollout(int max){
             invalid_rollout_latency.Record(before_evaluate_time - rollout_start_time);
         }
 
-        if (use_server_eval) {
-            server_evaluate(cur_board, leaf, max, rollout_in_turn, eval_latency, pending_reply);
-        }
-        else {
-            local_evaluate(cur_board, leaf, max, rollout_in_turn, eval_latency);
-        }
+
+        server_evaluate(cur_board, leaf, max, rollout_in_turn, eval_latency, pending_reply);
 
         long after_evaluate_time=getutime();
         if(leaf->rq_sent) {
@@ -330,12 +259,9 @@ void MCTSPlayer::rollout(int max){
 
     long wait_request_over = gettime();
     int server_eval_cnt = 0;
-    if (use_server_eval) {
-        server_eval_cnt = on_server_rollout_loop_over(pending_reply);
-    }
-    else {
-        on_local_rollout_loop_over();
-    }
+
+    server_eval_cnt = on_server_rollout_loop_over(pending_reply);
+
     LOG_INFO("wait request over time :" << (gettime() - wait_request_over));
 
     long cost_time = gettime() - start_time;
@@ -376,112 +302,44 @@ void MCTSPlayer::server_evaluate(GoBoard& cur_board, NodePtr leaf, int max, atom
         float tromp_taylor = 0;
         if(leaf->depth>300){
             int temp_min_max=max;
-            if(root_color==GoBoard2::COLOR_WHITE){
+            if(root_color==GoBoard::COLOR_WHITE){
                 temp_min_max*=-1;
             }
             tromp_taylor= (cur_board.get_score_black()*temp_min_max>0) ? 1: -1;
         }
         long st = getutime();
-        int is_selfplay = selfplay;
         int vl = virtual_loss;
         evaluator_.PolicyAndValueEval(&cur_board,
-                                      [min_max, root_color, leaf_color, leaf, st, tromp_taylor, is_selfplay, &eval_latency, vl](bool ok, float value_score, std::vector<PolicyItem>& policy_list) mutable {
+                                      [min_max, leaf, st, tromp_taylor, &eval_latency, vl](bool ok, float value_score, std::vector<PolicyItem>& policy_list) mutable {
                                           eval_latency.Record(getutime() - st);
                                           std::sort(policy_list.begin(), policy_list.end(), [](PolicyItem a, PolicyItem b) {
                                               return a.prob > b.prob;
                                           });
                                           float score_value = value_score*min_max;
-                                          leaf->value_pred=score_value;
+                                          leaf->value_pred = score_value;
                                           ChildrenVecPtr nexts = ChildrenVecPtr(new std::vector<NodePtr>());
                                           for (uint i = 0;i < policy_list.size(); ++i) {
                                               int pos = policy_list[i].pos;
                                               float prob = policy_list[i].prob;
-                                              if (pos!=GoBoard2::POS_PASS && prob < Config::min_prob()) continue;
+                                              if (pos!=GoBoard::POS_PASS && prob < Config::min_prob()) continue;
                                               EdgePtr edge = EdgePtr(new Edge(pos, prob, nexts->size()));
                                               NodePtr node = NodePtr(new Node(leaf, edge, nexts->size()));
-                                              node->depth=leaf->depth+1;
-                                              if (pos==GoBoard2::POS_PASS && leaf->depth>300 && leaf->edge!=nullptr && leaf->edge->action==GoBoard2::POS_PASS) {
-                                                  if (Config::selfplay() == 0) node->is_terminate=true;
+                                              node->depth = leaf->depth+1;
+                                              if (pos == GoBoard::POS_PASS && leaf->depth > 300 && leaf->edge != nullptr && leaf->edge->action == GoBoard::POS_PASS) {
                                                   node->result=tromp_taylor;
                                               }
                                               nexts->push_back(node);
                                           }
-                                          leaf->nexts=nexts;
+                                          leaf->nexts = nexts;
                                           __asm__("mfence");
                                           leaf->eval_ready = true;
                                           mcts_back_update(leaf, vl, score_value, leaf->invalid_visit);
                                       });
-        //LOG_INFO("server evaluate push time:" << gettime()-st);
     }else{
         leaf->invalid_visit++;
     }
 }
-void MCTSPlayer::local_evaluate(GoBoard& org_board, NodePtr leaf, int max, atomic_int& rollout_in_turn, Latency& eval_latency) {
-    int root_color = root_board->get_color();
 
-    //symmetry history
-    string history = org_board.get_history();
-    int symid = rand() % 8;
-    string new_history = symmetry->symmetry_history(history, symid);
-    GoBoard2 cur_board(7.5);
-    cur_board.apply_history(new_history);
-
-    int leaf_color = cur_board.get_color();
-    if (!leaf->rq_sent){
-        rollout_in_turn++;
-        leaf->rq_sent=true;
-        int min_max=max;
-        if(leaf_color!=root_color){
-            min_max*=-1;
-        }
-        TensorrtEvalEntry *entry=new TensorrtEvalEntry();
-        entry->symid=symid;
-        entry->node=leaf;
-        entry->min_max=min_max;
-        entry->rec=&eval_latency;
-        int N_FEATURE=18;
-        memset(entry->feature,0,sizeof(float)*19*19*N_FEATURE);
-        GoBoard2 feature_board(7.5);
-        string start_history = "";
-        if (new_history.length() >= 14)
-            start_history = new_history.substr(0, new_history.length()-14);
-        feature_board.apply_history(start_history);
-        int next_color = cur_board.get_color();
-        feature_board.extract_feature_all_planes((float *)entry->feature,N_FEATURE,next_color, new_history);
-        int offset = 0;
-        if (next_color == 1) offset = 1;
-        feature_board.extract_feature_next_color((float *)entry->feature,N_FEATURE,offset);
-
-        // legal and sensible mask
-        memset(entry->sensible,0,sizeof(float)*19*19*2);
-        cur_board.extract_feature_sensible((float *)entry->sensible,2,0,next_color);
-
-        // ladder mask, cannt escape mask
-        memset(entry->ladder,0,sizeof(float)*19*19*2);
-        cur_board.extract_feature_ladder_capture_and_cann_escape((float *)entry->ladder,2,0,next_color);
-
-        if(leaf->depth>300){
-            int min_max=max;
-            if(root_color==GoBoard2::COLOR_WHITE){
-                min_max*=-1;
-            }
-            entry->tromp_taylor= (cur_board.get_score_black()*min_max>0) ? 1: -1;
-        }
-
-        entry->st=gettime();
-        TensorrtEval::get_instance().push(entry);
-
-        int queue_size = (int)Config::queue_size();
-        int pending_size = TensorrtEval::get_instance().get_pending();
-        while (test_mode && pending_size >= queue_size) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            pending_size = TensorrtEval::get_instance().get_pending();
-        }
-
-    }else{
-        leaf->invalid_visit++;
-    }
-}
 
 int MCTSPlayer::on_server_rollout_loop_over(std::atomic<long>& pending_reply) {
     int server_eval_cnt = 0;
@@ -506,15 +364,6 @@ int MCTSPlayer::on_server_rollout_loop_over(std::atomic<long>& pending_reply) {
     }
 
     return server_eval_cnt;
-}
-
-void MCTSPlayer::on_local_rollout_loop_over() {
-    int wait_for = 0;
-    while (TensorrtEval::get_instance().get_pending() > 0 && wait_for<100){
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        wait_for++;
-    }
-    LOG_INFO("wait_for: " << wait_for);
 }
 
 void MCTSPlayer::cal_rollout_speed(int rollout_in_turn, int server_eval_cnt, long cost_time) {
@@ -580,18 +429,18 @@ string MCTSPlayer::gen_apply_move()
 #if 0
     char history_buf[2048];
     strcpy(history_buf,root_board->get_history().c_str());
-    dump_all_move(history_buf,strlen(history_buf),root, root_board->get_color()==GoBoard2::COLOR_BLACK ? 1 : -1);
+    dump_all_move(history_buf,strlen(history_buf),root, root_board->get_color()==GoBoard::COLOR_BLACK ? 1 : -1);
 #endif
 
-    MCTSPair res = mcts_select_action(root, root_board, op_action==GoBoard2::POS_PASS);
+    MCTSPair res = mcts_select_action(root, root_board, op_action==GoBoard::POS_PASS);
 
     char s_pos[10];
-    if (res.action==-100){
+    if (res.action == -100){
         // nearly to loss, resign
         root.reset(); // any action after play resign will raise assert failure
         strcpy(s_pos,"resign");
     } else {
-        if(res.action==GoBoard2::POS_PASS){
+        if(res.action == GoBoard::POS_PASS){
             strcpy(s_pos,"pass");
         }else{
             int row = res.action / 19;
@@ -604,7 +453,7 @@ string MCTSPlayer::gen_apply_move()
             res.node.reset();
         });
         recycle.detach();
-        bool succ=root_board->apply_move(res.action);
+        bool succ = root_board->apply_move(res.action);
         if (!succ) {
             LOG_FATAL("Invalid Move met: " << res.action);
             LOG_FATAL(root_board->print_board_buffer());

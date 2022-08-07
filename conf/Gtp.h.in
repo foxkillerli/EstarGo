@@ -1,3 +1,0 @@
-// the configured options and settings for Tutorial
-#define estar_go_VERSION_MAJOR @estar_go_VERSION_MAJOR@
-#define estar_go_VERSION_MINOR @estar_go_VERSION_MINOR@

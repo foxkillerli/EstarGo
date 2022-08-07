@@ -14,12 +14,12 @@
 #include <chrono>
 
 #include "MCTSTree.h"
-//#include "evaluator.h"
-#include "Config.h"
+//#include "Evaluator.h"
+#include "../include/utils/Config.h"
 #include "GoBoard.h"
 #include "utils/Executor.h"
-#include "Config.h"
 #include "Symmetry.h"
+#include "Latency.h"
 
 /**
  * A player with Monte-Carlo Tree Search that uses a tree policy that gives prior probability of each node and a default policy that estimates the win rate of each node.
@@ -51,9 +51,6 @@ private:
     int dynamic_exp;
     int n_gpu;
     bool test_mode; /** true for sync, false for async **/
-
-    int selfplay; /** for selfplay generation data **/
-    int selfplay_eval_rollout;
 
     /** loging field **/
     int total_rollout;/** Total rollout in AI's turn*/
@@ -100,18 +97,13 @@ private:
 
 public:
     GoBoard *root_board;
-    int changed_rank1;
-    int dirichlet_top_1;
-    int dirichlet_top_3;
-    int dirichlet_top_5;
-    int dirichlet_top_10;
-    float dirichlet_map;
+
     static const int INIT_ROLLOUT_SPEED=850;  // This is the init rollout speed for each async send thread (equals with GPU num)
     MCTSPlayer(Executor *exe, std::string history = "") {
         executor=exe;
         symmetry = new Symmetry();
         srand(time(NULL));
-        root_board = new GoBoard(7.5);
+        root_board = new GoBoard(7.5, 19);
         root_board->apply_history(history);
         //root_board->apply_history("DdPdCpPpEqCjNcQfPgQgChCmDlClDjDkEkCkDiElFkJdHcIePcQcQdOcPbOdObRdNdMbLcLbKcJcKbJbOeQeKeKaPeQdNbGdGcFdEbDeCeCdDcCfBeDfBfIgKgIiPhQiFfFgGgGhFhEgGfHgGiHhEeEfNqLqQqPqQpPoPrOrQrOqQnGqKpKqJpJqIpIqBoHpEmDoFlCoBnDpCqDqCnDnDmCrBrDrBsKdLdLfKfNgEhFeCgEdDgEeOgNiNfMgMfLgLePfOfKiPiQjPjNkQkRkQhRhImQlPkRmRnKmPlOmJnGnHlLoHdHeLpMpLnKnKoIoJoMoKlJmInJlJkKkIlLlLmKlNjMjNlOlOkOjFoFpGoHoEoEpHnEnFnIkHkIjOnPnPmNmQmRlNhMhOiNjLhMiOsNsRbQbQaSnSmSlPsNrRgRiRfReRcSgSdSfKhSpLiLjJiJjSqRqSrRrRpSsSqSoRsJhSrHbGbHaGaIcMcLaCsDsScHjGjFcFbGpGmNaOaJaEcGeJeIdIfHfJfSeOhMaBqJgRoSmQoHiCcMmMeMnRaOoPaApBpAqArBmAmAlBkAnAoIaAmBjBhAnEaAiAmAkBiErAhSjAnMqAjHrBlFsCiFiEiGkGlFjEjFiFjGgCaLrSaJrApKsDkCmClNpCjNnBmMlAgGsBdFqBbIsAcMsAaRgDbLmAkLkAeFfRqFrSiSh");
         root = NodePtr(new Node());
@@ -141,9 +133,6 @@ public:
         //int end_gpu_id=config.get_int("eval_end_id");
         n_gpu=Config::model_local_gpuids().size();
         f_early=2;
-
-        selfplay=Config::selfplay();
-        selfplay_eval_rollout=Config::selfplay_eval_rollout();
         test_mode = Config::model_is_sync();
 
         use_server_eval=Config::use_server_evaluator();
@@ -155,18 +144,6 @@ public:
         op_action = 0;
 
         stop_rollout = false;
-
-        cross_entropy = 0;
-        selfplay_sample_seed = std::chrono::system_clock::now().time_since_epoch().count();
-        selfplay_sample_generator = std::default_random_engine(selfplay_sample_seed);
-
-        changed_rank1 = 0;
-
-        dirichlet_top_1 = 0;
-        dirichlet_top_3 = 0;
-        dirichlet_top_5 = 0;
-        dirichlet_top_10 = 0;
-        dirichlet_map = 0;
     }
 
     ~MCTSPlayer() {
@@ -189,9 +166,7 @@ public:
     void est_timeout_rollout();
     int get_rollout_num();
     void server_evaluate(GoBoard& cur_board, NodePtr leaf, int max,std::atomic_int& rollout_in_turn, Latency& eval_latency, std::atomic<long>& pending_reply);
-    void local_evaluate(GoBoard& cur_board, NodePtr leaf, int max, std::atomic_int& rollout_in_turn, Latency& eval_latency);
     int on_server_rollout_loop_over(std::atomic<long>& pending_reply);
-    void on_local_rollout_loop_over();
     void cal_rollout_speed(int rollout_in_turn, int server_eval_cnt, long cost_time);
 
     void time_left(int time_left){

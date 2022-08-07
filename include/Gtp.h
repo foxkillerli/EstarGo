@@ -9,12 +9,10 @@
 #include <cstdio>
 #include <string>
 #include "GoBoard.h"
-#include "Config.h"
+#include "utils/Config.h"
 #include "utils/Executor.h"
 #include "MCTSPlayer.h"
 #include "utils/Logger.h"
-
-//#include <grpc++/grpc++.h>
 
 /**
  * A class that implements GTP Protocol
@@ -22,8 +20,8 @@
 class GTP {
 public:
     GTP() {
-        mctsplayer = 0;
-        tmp_mctsplayer = 0;
+        mcts_player = 0;
+        tmp_mcts_player = 0;
         executor = new Executor(Config::n_thread());
         is_pondering=0;
     }
@@ -32,17 +30,11 @@ public:
     void run();
 
 private:
-    /**
-     * Print message $s in GTP format.
-     */
     void gtp_print(const char *s) {
         printf("= %s\n\n", s);
         fflush(stdout);
     }
 
-    /**
-     * Print error message $s in GTP format.
-     */
     void gtp_print_err(const char *s) {
         printf("? %s\n\n", s);
         fflush(stdout);
@@ -78,12 +70,10 @@ private:
     static constexpr const char* GTP_FINAL_SCORE = "final_score";
     static constexpr const char* GTP_TIME_SETTINGS = "time_settings";
     static constexpr const char* GTP_SHOW_BOARD = "showboard";
-    static constexpr const char* GTP_CGOS_OPPONENT_NAME = "cgos-opponent_name";
-    static constexpr const char* GTP_CGOS_GAMEOVER = "cgos-gameover";
 
 private:
-    MCTSPlayer *mctsplayer; /**< AI player */
-    MCTSPlayer *tmp_mctsplayer; /**< tmp AI player */
+    MCTSPlayer *mcts_player; /**< AI player */
+    MCTSPlayer *tmp_mcts_player; /**< tmp AI player */
     Executor *executor;
     std::string my_name;
     std::string my_version;
