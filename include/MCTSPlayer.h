@@ -59,7 +59,6 @@ private:
     bool stop_rollout;
 
     bool is_uec;
-    bool is_cgos;
     int time_out_ms; /**< Time out for each move, break rollout loop when time exceeeded. */
     int stage_0_safe_time_s;
     int stage_150_safe_time_s;
@@ -84,9 +83,6 @@ private:
     std::vector<std::string> history;
     double cross_entropy;
     std::vector<double> cross_entropy_list;
-
-    unsigned selfplay_sample_seed;
-    std::default_random_engine selfplay_sample_generator;
 
     typedef std::pair<int, int> NPAIR;
 
