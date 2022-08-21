@@ -1,6 +1,7 @@
 module GoKu
 {
     sequence<string> RequestBatch;
+    
     struct MoveProb
     {
         int pos;
@@ -15,7 +16,7 @@ module GoKu
         float v;
     }
 
-    sequence<Reply> ReplyBatch;
+    sequence<Reply> ReplyBatch;         
 
     interface InterfaceEval
     {

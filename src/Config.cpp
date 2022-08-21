@@ -1,7 +1,7 @@
 //
 // Created by Kaihua Li on 2022/7/4.
 //
-#include "utils/Config.h"
+#include "../include/utils/Config.h"
 #include <regex>
 
 using std::string;

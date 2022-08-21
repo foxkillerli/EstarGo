@@ -250,56 +250,6 @@ public:
 
     bool apply_move(int action);
     bool apply_history(const std::string& history);
-
-    //policynet and valuenet
-    void extract_feature_stone(float* feature,int stride,int offset,int my_color_int);
-    void extract_feature_valid_move(float* feature,int stride,int offset,int my_color_int);
-    void extract_feature_sensible(float* feature,int stride,int offset,int my_color_int);
-    void extract_feature_liberty(float* feature,int stride,int offset,int max_liberty);
-    void extract_feature_capture(float* feature,int stride,int offset,int my_color_int,int max_capture);
-    void extract_feature_selfatari_size(float* feature, int stride, int offset, int my_color_int, int max_atari);
-    void extract_feature_lib_aftermove(float* feature,int stride,int offset,int my_color_int, int max_liberty);
-    void extract_feature_ladder_capture_and_cann_escape(float* feature,int stride,int offset,int my_color_int);
-    void extract_feature_turnsince(float* feature,int stride,int offset,int max_history);
-    void extract_feature_dragon_safety(float* feature,int stride,int offset);
-    void extract_feature_dragon_lib(float* feature,int stride,int offset);
-    void extract_feature_lastko(float* feature,int stride,int offset);
-    void extract_pachi_capture(float *feature,int stride, int offset, int my_color_int);
-    void extract_pachi_selfatari(float *feature,int stride, int offset, int my_color_int);
-    void extract_pachi_2lib(float *feature,int stride, int offset, int my_color_int);
-    void extract_feature_dragon_old(float* feature,int stride,int offset);
-
-    void extract_feature_dragon_mgroup(float* feature,int stride, int offset, int max_history);
-
-    void extract_feature_dragon_group(int* feature);
-    void extract_feature_group(int* feature);
-    void extract_feature_planes(float* feature,int stride,int t, int next_color);
-    void extract_feature_next_color(float* feature,int stride,int offset);
-    void extract_feature_all_planes(float* feature, int stride, int next_color, std::string new_history);
-
-#if 0
-    #ifdef CALCULATE
-    //fastrollout
-    float calculate_fastrollout_feature(int pos, prior_t &prior, int my_color_int);
-    float calculate_response_feature(int pos, int dir, prior_t &prior, int my_color);
-#endif
-
-#ifdef EXTRACT
-    void extract_fastrollout_feature(float* feature,int *pat3, int my_color_int);
-    void extract_response_feature(int* patr12, int* nbr, int my_color_int);
-#endif
-
-    GoSet *get_dirty(int my_color_int){
-        if(b->dirty_size>0){
-            for(int i=0;i<b->dirty_size;i++){
-                dirty_pos[0]->add(b->dirty[i]);
-                dirty_pos[1]->add(b->dirty[i]);
-            }
-        }
-        b->dirty_size=0;
-        return dirty_pos[my_color_int];
-    }
-#endif
 };
 
 

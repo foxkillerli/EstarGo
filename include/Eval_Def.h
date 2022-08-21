@@ -2,7 +2,7 @@
 #define EVAL_DEF_H
 
 #include <Ice/Ice.h>
-#include "goku_proto.h"
+#include "Proto.h"
 
 struct PolicyItem {
   int pos;

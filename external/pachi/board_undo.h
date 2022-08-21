@@ -79,7 +79,7 @@ void board_quick_undo(board_t *b, move_t *m, board_undo_t *u);
 #define with_move_strict(board_, coord_, color_, body_) \
        do { \
 	       board_t *board__ = (board_);   /* For with_move_return() */	\
-               move_t m_ = move((coord_), (color_));	   \
+               move_t m_ = move_((coord_), (color_));	   \
                board_undo_t u_; \
                assert (board_quick_play(board__, &m_, &u_) >= 0);  \
                do { body_ } while(0);                     \

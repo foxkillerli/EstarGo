@@ -36,3 +36,4 @@
 
 # CMake files
 cmake-*
+*.un~

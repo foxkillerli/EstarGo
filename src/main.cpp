@@ -3,9 +3,9 @@
 //
 #include <iostream>
 #include <gflags/gflags.h>
-#include "include/utils/Logger.h"
-#include "include/Gtp.h"
-#include "include/utils/Config.h"
+#include "utils/Logger.h"
+#include "Gtp.h"
+#include "utils/Config.h"
 
 using std::cout;
 using std::endl;

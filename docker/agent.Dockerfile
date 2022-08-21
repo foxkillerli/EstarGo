@@ -1,15 +1,19 @@
 FROM ubuntu:20.04
+RUN apt-get update
+RUN apt-get install -y ca-certificates
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+ADD sources.list /etc/apt/sources.list
 
-RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime
 RUN apt-get update
 RUN apt-get install -y build-essential \
+    zeroc-ice-all-runtime\
+    zeroc-ice-all-dev\
     ssh \
     gdb \
     clang \
     cmake \
     rsync \
     tar \
-    python \
     libgflags-dev \
     liblog4cplus-dev
 RUN apt-get install -y openssh-server
