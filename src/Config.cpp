@@ -2,41 +2,33 @@
 // Created by Kaihua Li on 2022/7/4.
 //
 #include "../include/utils/Config.h"
+#include "../include/utils/INIReader.h"
 #include <regex>
 
 using std::string;
 using std::vector;
 using std::regex;
 using std::sregex_token_iterator;
-
-const string Config::SECTION_MODEL("model");
-const string Config::FIELD_MODEL_FILE("file");
-const string Config::FIELD_MODEL_LOCAL_GPUIDs("gpuids");
-const string Config::FIELD_MODEL_IS_SYNC("is_sync");
-const string Config::FIELD_MODEL_AUTHOR("author");
-const string Config::FIELD_MODEL_USE_FP16("use_fp16");
-
-const string Config::SECTION_MCTS("mcts");
-const string Config::FIELD_MCTS_VIRTUAL_LOSS("virtual_loss");
-const string Config::FIELD_MCTS_INIT_TEMPERATURE("init_temperature");
-const string Config::FIELD_MCTS_TEMPERATURE_STEP("temperature_step");
-const string Config::FIELD_MCTS_C_PUCT("c_puct");
-const string Config::FIELD_MCTS_MIN_PROB("min_prob");
-const string Config::FIELD_MCTS_N_THREAD("n_thread");
-const string Config::FIELD_MCTS_SURRENDER_RATIO("surrender_ratio");
-const string Config::FIELD_MCTS_PASS_RATIO("pass_ratio");
-const string Config::FIELD_MCTS_PASS_MOVE_NUM("pass_move_num");
-
-const string Config::SECTION_GTP("gtp");
+const string Config::SECTION_GTP("GTP");
 const string Config::FIELD_GTP_NAME("name");
 const string Config::FIELD_GTP_VERSION("version");
 
-const string Config::SECTION_TIME_POLICY("time_policy");
+const string Config::SECTION_MODEL("Model");
+const string Config::FIELD_MODEL_TYPE("type");
+
+const string Config::SECTION_MCTS("MCTS");
+const string Config::FIELD_MCTS_VIRTUAL_LOSS("virtual_loss");
+const string Config::FIELD_MCTS_C_PUCT("c_puct");
+const string Config::FIELD_MCTS_POLICY_PROB_THRESHOLD("policy_prob_threshold");
+const string Config::FIELD_MCTS_SEARCH_THREADS("search_threads");
+const string Config::FIELD_MCTS_RESIGN_THRESHOLD("resign_threshold");
+const string Config::FIELD_MCTS_PASS_THRESHOLD("pass_threshold");
+const string Config::FIELD_MCTS_PASS_AFTER_N_MOVES("pass_after_n_moves");
+
+const string Config::SECTION_TIME_POLICY("TimePolicy");
 const string Config::FIELD_TIME_POLICY_PONDERING("pondering");
-const string Config::FIELD_TIME_POLICY_ENABLE("time_policy");
+const string Config::FIELD_TIME_POLICY_ENABLE("time_policy_enabled");
 const string Config::FIELD_TIME_POLICY_TIME_OUT_MS("time_out_ms");
-const string Config::FIELD_TIME_POLICY_IS_UEC("is_uec");
-const string Config::FIELD_TIME_POLICY_IS_CGOS("is_cgos");
 const string Config::FIELD_TIME_POLICY_STAGE_0_SAFE_TIME_S("stage_0_safe_time_s");
 const string Config::FIELD_TIME_POLICY_STAGE_150_SAFE_TIME_S("stage_150_safe_time_s");
 const string Config::FIELD_TIME_POLICY_QUICK_PLAY_MOVE_NUM("quick_play_move_num");
@@ -45,12 +37,7 @@ const string Config::FIELD_TIME_POLICY_OVER_USING_THR_TIME_OUT_MS("over_using_th
 const string Config::FIELD_TIME_POLICY_UNDER_USING_THR_TIME_OUT_MS("under_using_thr_time_out_ms");
 const string Config::FIELD_TIME_POLICY_UNDER_USING_TIME_OUT_MS("under_using_time_out_ms");
 
-const string Config::SECTION_SELFPLAY("selfplay");
-const string Config::FIELD_SELFPLAY("selfplay");
-const string Config::FIELD_SELFPLAY_EVAL_ROLLOUT("selfplay_eval_rollout");
-const string Config::FIELD_SELFPLAY_MIN_MOVE("selfplay_min_move");
-
-const std::string Config::SECTION_EVALUATOR("evaluator");
+const std::string Config::SECTION_REMOTE("Remote");
 const std::string Config::FIELD_BATCH_SIZE("batch_size");
 const std::string Config::FIELD_SLEEP_THRESHOLD("sleep_threshold");
 const std::string Config::FIELD_SLEEP_INTERVAL("sleep_interval");
@@ -64,22 +51,16 @@ const std::string Config::FIELD_PROXY_NUMBER("proxy_number");
 
 
 // model
-string Config::model_file_;
-vector<string> Config::model_local_gpuids_;
-bool Config::model_is_sync_;
-string Config::model_author_;
-bool Config::model_use_fp16_;
+string Config::model_type_;
 
 // mcts
 int Config::virtual_loss_;
-float Config::init_temperature_;
-float Config::temperature_step_;
 float Config::c_puct_;
-float Config::min_prob_;
-int Config::n_thread_;
-float Config::resign_ratio_;
-float Config::pass_ratio_;
-int Config::pass_move_num_;
+float Config::policy_prob_threshold_;
+int Config::search_threads_;
+float Config::resign_threshold_;
+float Config::pass_threshold_;
+int Config::pass_after_n_moves_;
 
 // gtp
 string Config::gtp_name_;
@@ -117,21 +98,14 @@ std::string Config::proxy_name_;
 int Config::proxy_number_;
 
 void Config::Sinit(const string& conf_file_path) {
-    INIReader reader(conf_file_path);
-    if (reader.ParseError() < 0) {
-        throw new std::runtime_error("Fail to load configuration file:" + conf_file_path);
+    IniReader reader;
+    if (!reader.OpenFile(conf_file_path.c_str())) {
+        std::cerr << "open config file failed" << std::endl;
+        exit(1);
     }
 
     // model
-    model_file_ = reader.Get(SECTION_MODEL, FIELD_MODEL_FILE, "");
-    string gpuIDstr = reader.Get(SECTION_MODEL, FIELD_MODEL_LOCAL_GPUIDs, "");
-    regex regexp{R"(,)"};
-    sregex_token_iterator it{gpuIDstr.begin(), gpuIDstr.end(), regexp, -1};
-    vector<string> gpuIDs{it, {}};
-    model_local_gpuids_ = gpuIDs;
-    model_is_sync_ = reader.GetBoolean(SECTION_MODEL, FIELD_MODEL_IS_SYNC, true);
-    model_author_  = reader.Get(SECTION_MODEL, FIELD_MODEL_AUTHOR, "");
-    model_use_fp16_ = reader.GetBoolean(SECTION_MODEL, FIELD_MODEL_USE_FP16, false);
+    model_type_ = reader.GetString(SECTION_MODEL, FIELD_MODEL_TYPE);
 
     // mcts
     virtual_loss_ = static_cast<int>(reader.GetInteger(SECTION_MCTS, FIELD_MCTS_VIRTUAL_LOSS, 3));

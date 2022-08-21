@@ -79,9 +79,6 @@ private:
     }
 
     bool _apply_move(int pos,int color);
-    void _recompute_libs(board* b, group_t g);
-    bool _surround_by_atari_group(group_t g);
-    void _update_feature(int my_color_int);
 
 public:
     static const int COLOR_BLACK=0;

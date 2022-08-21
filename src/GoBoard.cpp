@@ -52,14 +52,14 @@ bool GoBoard::_apply_move(int action, int color) {
     }
     return succ;
 }
-
+/*
 std::string GoBoard::print_board_buffer() {
     std::string buffer(10240, ' ');
-    int board_size = board_print_buffer(b, const_cast<char *>(buffer.data()), buffer.size());
+    int board_size = board_print(b, const_cast<char *>(buffer.data()), buffer.size());
     buffer.resize(board_size);
     return buffer;
 }
-
+*/
 bool GoBoard::apply_history(const std::string& history) {
     assert(history.length() % 2 == 0);
     this->history=history;

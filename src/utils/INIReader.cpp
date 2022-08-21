@@ -1,121 +1,148 @@
-//
-// Created by Kaihua Li on 2022/7/4.
-//
+#include "../../include/utils/IniReader.h"
 
-#include <algorithm>
-#include <cctype>
-#include <cstdlib>
-#include "utils/Ini.h"
-#include "utils/INIReader.h"
-using std::string;
-
-INIReader::INIReader(string filename)
+bool IniReader::OpenFile(const char* Filepath, int flag)
 {
-    _error = ini_parse(filename.c_str(), ValueHandler, this);
+	file.open(Filepath, flag);
+	if (!file.good())
+		return false;
+
+	Applines.clear();
+	Lines.clear();
+
+	std::string str;
+	int index = 0;
+	while (std::getline(file, str))
+	{
+		Lines.insert(Lines.end(), str);
+		if (str.size() && str.c_str()[0] == '[')
+			Applines.insert(Applines.end(), AppIndex(index, str));
+		str.clear();
+		index++;
+	}
+	if (Lines.size() && Applines.size())
+		return true;
+
+	Close();
+	return false;
 }
 
-INIReader::~INIReader()
+bool IniReader::SaveFile(const char* Filepath, int flag)
 {
-    // Clean up the field sets
-    std::map<std::string, std::set<std::string>*>::iterator fieldSetsIt;
-    for (fieldSetsIt = _fields.begin(); fieldSetsIt != _fields.end(); ++fieldSetsIt)
-        delete fieldSetsIt->second;
+	file.open(Filepath, std::fstream::out);
+	if (!file.good())
+		return false;
+
+	Applines.clear();
+	Lines.clear();
+
+	return true;
 }
 
-int INIReader::ParseError()
+int IniReader::GetGroupCount()
 {
-    return _error;
+	return Applines.size();
 }
 
-string INIReader::Get(string section, string name, string default_value)
+bool IniReader::Close()
 {
-    string key = MakeKey(section, name);
-    return _values.count(key) ? _values[key] : default_value;
+	for(std::string str : Lines)
+		file << str.c_str() << std::endl;
+
+	file.close();
+	Lines.clear();
+	Applines.clear();
+	return false;
+}
+bool IniReader::WriteStrings(std::string AppName, std::vector<std::string>& strings)
+{
+	for (size_t i = 0; i < strings.size(); i++)
+	{
+		WriteString(AppName, std::to_string(i), strings.at(i));
+	}
+	return false;
+}
+std::vector<std::string> IniReader::GetStrings(std::string AppName)
+{
+	std::vector<std::string> temp;
+	if (!Lines.size() || !Applines.size())
+		return temp;
+
+	for (size_t appname = 0; appname < Applines.size(); appname++)
+	{
+		std::string str = std::string("[") + AppName.c_str() + "]";
+		if (!strcmp(str.c_str(), Applines.at(appname).Name.c_str()))
+		{
+			for (size_t key = Applines.at(appname).Index + 1; key < Lines.size(); key++)
+			{
+				std::string full_str_temp = Lines.at(key);
+				if (full_str_temp.at(0) == '[')
+					return temp;
+				int offset = full_str_temp.find('=');
+				std::string key_name = full_str_temp.substr(0, offset);
+				std::string val = full_str_temp.substr(offset + 1);
+				temp.push_back(val);
+			}
+		}
+	}
+	return temp;
 }
 
-long INIReader::GetInteger(string section, string name, long default_value)
+std::string IniReader::GetString(std::string AppName, std::string KeyName)
 {
-    string valstr = Get(section, name, "");
-    const char* value = valstr.c_str();
-    char* end;
-    // This parses "1234" (decimal) and also "0x4D2" (hex)
-    long n = strtol(value, &end, 0);
-    return end > value ? n : default_value;
+	if (!Lines.size() || !Applines.size())
+		return std::string();
+
+	for (size_t appname = 0; appname < Applines.size(); appname++)
+	{
+		std::string str = std::string("[") + AppName.c_str() + "]";
+		if (!strcmp(str.c_str(), Applines.at(appname).Name.c_str()))
+		{
+			for (size_t key = Applines.at(appname).Index + 1; key < Lines.size(); key++)
+			{
+				std::string full_str_temp = Lines.at(key);
+				if (full_str_temp.at(0) == '[')
+					return std::string();
+				int offset = full_str_temp.find('=');
+				std::string key_name = full_str_temp.substr(0, offset);
+				if (!strcmp(KeyName.c_str(), key_name.c_str()))
+					return full_str_temp.substr(offset + 1);
+			}
+		}
+	}
+	return std::string();
 }
 
-double INIReader::GetReal(string section, string name, double default_value)
+bool IniReader::WriteString(std::string AppName, std::string KeyName, std::string Value)
 {
-    string valstr = Get(section, name, "");
-    const char* value = valstr.c_str();
-    char* end;
-    double n = strtod(value, &end);
-    return end > value ? n : default_value;
-}
+	for (size_t appname = 0; appname < Applines.size(); appname++)
+	{
+		std::string str = std::string("[") + AppName.c_str() + "]";
+		if (!strcmp(str.c_str(), Applines.at(appname).Name.c_str()))
+		{
 
-bool INIReader::GetBoolean(string section, string name, bool default_value)
-{
-    string valstr = Get(section, name, "");
-    // Convert to lower case to make string comparisons case-insensitive
-    std::transform(valstr.begin(), valstr.end(), valstr.begin(), ::tolower);
-    if (valstr == "true" || valstr == "yes" || valstr == "on" || valstr == "1")
-        return true;
-    else if (valstr == "false" || valstr == "no" || valstr == "off" || valstr == "0")
-        return false;
-    else
-        return default_value;
-}
+			for (size_t key = Applines.at(appname).Index + 1; key < Lines.size(); key++)
+			{
+				std::string full_str_temp = Lines.at(key);
+				if (full_str_temp.at(0) == '[')
+					break;
+				int offset = full_str_temp.find('=');
+				std::string key_name = full_str_temp.substr(0, offset);
+				if (!strcmp(KeyName.c_str(), key_name.c_str()))
+				{
+					Lines.at(key) = std::string(KeyName) + "=" + Value.c_str();
+					return true;
+				}
+			}
+			std::string val = KeyName + "=" + Value;
+			Lines.insert(Lines.begin() + Applines.at(appname).Index + 1, val);
 
-std::set<std::string> INIReader::GetSections() const
-{
-    return _sections;
-}
-
-std::set<std::string> INIReader::GetFields(std::string section) const
-{
-    string sectionKey = section;
-    std::transform(sectionKey.begin(), sectionKey.end(), sectionKey.begin(), ::tolower);
-    std::map<std::string, std::set<std::string>*>::const_iterator fieldSetIt = _fields.find(sectionKey);
-    if(fieldSetIt==_fields.end())
-        return std::set<std::string>();
-    return *(fieldSetIt->second);
-}
-
-string INIReader::MakeKey(string section, string name)
-{
-    string key = section + "=" + name;
-    // Convert to lower case to make section/name lookups case-insensitive
-    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-    return key;
-}
-
-int INIReader::ValueHandler(void* user, const char* section, const char* name,
-                            const char* value)
-{
-    INIReader* reader = (INIReader*)user;
-
-    // Add the value to the lookup map
-    string key = MakeKey(section, name);
-    if (reader->_values[key].size() > 0)
-        reader->_values[key] += "\n";
-    reader->_values[key] += value;
-
-    // Insert the section in the sections set
-    reader->_sections.insert(section);
-
-    // Add the value to the values set
-    string sectionKey = section;
-    std::transform(sectionKey.begin(), sectionKey.end(), sectionKey.begin(), ::tolower);
-
-    std::set<std::string>* fieldsSet;
-    std::map<std::string, std::set<std::string>*>::iterator fieldSetIt = reader->_fields.find(sectionKey);
-    if(fieldSetIt==reader->_fields.end())
-    {
-        fieldsSet = new std::set<std::string>();
-        reader->_fields.insert ( std::pair<std::string, std::set<std::string>*>(sectionKey,fieldsSet) );
-    } else {
-        fieldsSet=fieldSetIt->second;
-    }
-    fieldsSet->insert(name);
-
-    return 1;
+			for (size_t i = appname + 1; i < Applines.size(); i++)
+				Applines.at(i).Index++;
+			return true;
+		}
+	}
+	Lines.insert(Lines.end(), (std::string("[") + AppName.c_str() + "]").c_str());
+	Applines.insert(Applines.end(), AppIndex(Lines.size(), (std::string("[") + AppName.c_str() + "]").c_str()));
+	Lines.insert(Lines.end(), std::string(KeyName) + "=" + Value.c_str());
+	return false;
 }
