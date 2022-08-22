@@ -200,7 +200,6 @@ void MCTSPlayer::rollout(int max){
             }
         }
         if(root->is_terminate){
-            if (Config::selfplay() == 1) LOG_INFO("selfplay terminate error");
             exit_flag=true;
             LOG_INFO("Early exit, root is terminate");
             continue;
@@ -321,7 +320,7 @@ void MCTSPlayer::server_evaluate(GoBoard& cur_board, NodePtr leaf, int max, atom
                                           for (uint i = 0;i < policy_list.size(); ++i) {
                                               int pos = policy_list[i].pos;
                                               float prob = policy_list[i].prob;
-                                              if (pos!=GoBoard::POS_PASS && prob < Config::min_prob()) continue;
+                                              if (pos!=GoBoard::POS_PASS && prob < Config::policy_prob_threshold()) continue;
                                               EdgePtr edge = EdgePtr(new Edge(pos, prob, nexts->size()));
                                               NodePtr node = NodePtr(new Node(leaf, edge, nexts->size()));
                                               node->depth = leaf->depth+1;
@@ -400,11 +399,11 @@ string MCTSPlayer::gen_apply_move()
         return string("pass");
     }
 
-    for (int i = 0;i < Config::n_thread(); ++i) {
+    for (int i = 0;i < Config::search_threads(); ++i) {
         future<void> f = executor->commit(&MCTSPlayer::rollout, this, 1);
         search_thread_vec.push_back(std::move(f));
     }
-    for (int i = 0; i < Config::n_thread(); ++i) {
+    for (int i = 0; i < Config::search_threads(); ++i) {
         search_thread_vec[i].wait();
     }
     search_thread_vec.clear();

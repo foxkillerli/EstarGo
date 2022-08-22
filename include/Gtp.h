@@ -22,7 +22,7 @@ public:
     GTP() {
         mcts_player = 0;
         tmp_mcts_player = 0;
-        executor = new Executor(Config::n_thread());
+        executor = new Executor(Config::search_threads());
         is_pondering=0;
     }
 

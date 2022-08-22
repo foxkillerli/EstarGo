@@ -106,17 +106,11 @@ public:
         root->depth=root_board->get_total_moves();
         total_rollout = 0;
         time_remain = 600;
-        if (Config::use_server_evaluator()) {
-            rollout_speed = INIT_ROLLOUT_SPEED * Config::asyn_once_send();
-        } else {
-            rollout_speed = INIT_ROLLOUT_SPEED * Config::model_local_gpuids().size();
-        }
-        rollout_speed = rollout_speed / Config::n_thread();
+        rollout_speed = INIT_ROLLOUT_SPEED * Config::asyn_once_send();
+        rollout_speed = rollout_speed / Config::search_threads();
         virtual_loss = Config::virtual_loss();
         c_puct = Config::c_puct();
         time_policy = Config::is_time_policy();
-        is_uec = Config::is_uec();
-        is_cgos = Config::is_cgos();
         time_out_ms = Config::time_out_ms();
         stage_0_safe_time_s = Config::stage_0_safe_time_s();
         stage_150_safe_time_s = Config::stage_150_safe_time_s();
@@ -127,9 +121,7 @@ public:
         under_using_time_out_ms = Config::under_using_time_out_ms();
         //int start_gpu_id=config.get_int("eval_start_id");
         //int end_gpu_id=config.get_int("eval_end_id");
-        n_gpu=Config::model_local_gpuids().size();
         f_early=2;
-        test_mode = Config::model_is_sync();
 
         use_server_eval=Config::use_server_evaluator();
 
@@ -187,7 +179,7 @@ public:
 
     void start_pondering(){
         if (stop_rollout) return;
-        for (int i = 0; i < Config::n_thread(); ++i) {
+        for (int i = 0; i < Config::search_threads(); ++i) {
             std::future<void> f = executor->commit(&MCTSPlayer::rollout, this,-1);
             search_thread_vec.push_back(std::move(f));
         }

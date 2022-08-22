@@ -42,7 +42,7 @@ NodePtr mcts_select_path_root(NodePtr root, int vl, float c_puct, int max, GoBoa
     NodePtr best = 0;
     int visit_prune_thr=-1;
 
-    if(max==1 && Config::selfplay() == 0){
+    if(max==1){
         for (uint i=0;i<nexts->size();i++){
             if(visit_prune_thr < nexts->at(i)->edge->n - rollout_remain){
                 visit_prune_thr = nexts->at(i)->edge->n - rollout_remain;
@@ -63,22 +63,13 @@ NodePtr mcts_select_path_root(NodePtr root, int vl, float c_puct, int max, GoBoa
         }
     }
 
-    //if (Config::selfplay() == 1){
-    //	float total_visited_policy = 0.0;
-    //	for (uint i = 0; i < nexts->size(); i++) {
-    //		if (nexts->at(i)->edge->n > 0) total_visited_policy += nexts->at(i)->edge->p;
-    //	}
-    //	fa_w = fa_w - 0.25 * std::sqrt(total_visited_policy); // fpu reduction
-    //}
-
     visit_num+=nexts->size();
     for (uint i = 0; i < nexts->size(); ++i) {
         NodePtr child=nexts->at(i);
         if (child->is_repetition_checked && child->is_repetition) continue; //this node is repetition action
         if(child->is_terminate){
-            if (Config::selfplay() == 1) LOG_INFO("selfplay terminate error");
             if(child->result==max){
-                //one children is max, cur_node is terminal with result=max, since current player has one winning choice
+                //one child is max, cur_node is terminal with result=max, since current player has one winning choice
                 root->is_terminate=true;
                 root->result=max;
                 best=child;
@@ -88,7 +79,6 @@ NodePtr mcts_select_path_root(NodePtr root, int vl, float c_puct, int max, GoBoa
             }
         }else{
             if(child->edge->n < visit_prune_thr){
-                if (Config::selfplay() == 1) LOG_INFO("selfplay select path root error");
                 continue;
             }
             score_num++;
@@ -97,7 +87,7 @@ NodePtr mcts_select_path_root(NodePtr root, int vl, float c_puct, int max, GoBoa
                 best_score = score;
                 best = child;
             }
-            if(Config::selfplay() == 0 && child->edge->n == 0) {
+            if(child->edge->n == 0) {
                 break;
             }
         }
@@ -105,8 +95,7 @@ NodePtr mcts_select_path_root(NodePtr root, int vl, float c_puct, int max, GoBoa
     //LOG_INFO("size of score num:" << score_num);
     if (best==NULL) return root;
     if(best->is_terminate==true && best->result==-max){
-        if (Config::selfplay() == 1) LOG_INFO("selfplay terminate error");
-        //all children is -max, cur_node is terminal with result=-max, since current player has no winning choice
+        //all children are -max, cur_node is terminal with result=-max, since current player has no winning choice
         root->is_terminate=true;
         root->result=-max;
     }
@@ -224,22 +213,13 @@ NodePtr mcts_select_path(NodePtr cur_node, int vl, float c_puct, int max, GoBoar
         }
     }
 
-    //if (Config::selfplay() == 1){
-    //	float total_visited_policy = 0.0;
-    //	for (uint i = 0; i < nexts->size(); i++) {
-    //		if (nexts->at(i)->edge->n > 0) total_visited_policy += nexts->at(i)->edge->p;
-    //	}
-    //	fa_w = fa_w - 0.25 * std::sqrt(total_visited_policy); // fpu reduction
-    //}
-
     visit_num += nexts->size();
     for (uint i = 0; i < nexts->size(); ++i) {
         NodePtr child=nexts->at(i);
         if (child->is_repetition_checked && child->is_repetition) continue; //this node is repetition action
         if(child->is_terminate){
-            if (Config::selfplay() == 1) LOG_INFO("selfplay terminate error");
             if(child->result==max){
-                //one children is max, cur_node is terminal with result=max, since current player has one winning choice
+                //one child is max, cur_node is terminal with result=max, since current player has one winning choice
                 cur_node->is_terminate=true;
                 cur_node->result=max;
                 best=child;
@@ -254,14 +234,13 @@ NodePtr mcts_select_path(NodePtr cur_node, int vl, float c_puct, int max, GoBoar
                 best_score = score;
                 best = child;
             }
-            if(Config::selfplay() == 0 && child->edge->n == 0) {
+            if(child->edge->n == 0) {
                 break;
             }
         }
     }
     if(best->is_terminate==true && best->result==-max){
-        if (Config::selfplay() == 1) LOG_INFO("selfplay terminate error");
-        //all children is -max, cur_node is terminal with result=-max, since current player has no winning choice
+        //all children are -max, cur_node is terminal with result=-max, since current player has no winning choice
         cur_node->is_terminate=true;
         cur_node->result=-max;
     }
@@ -318,13 +297,13 @@ MCTSPair mcts_select_action(NodePtr cur_node, GoBoard *root_board, bool is_oppon
     for (uint i = 0; i < nexts.size(); ++i) {
         if(nexts[i]->edge->action==-1){
             pass_node=nexts[i];
-            if (Config::is_cgos() && !root_board->is_pass_safe()){
+            if (!root_board->is_pass_safe()){
                 continue;
             }
             float w = float(pass_node->edge->w);
             int n = float(pass_node->edge->n);
             float win_rate = ((w + n) / 2) / (n + 1e-8);
-            if (is_opponent_pass && root_board->get_total_moves() > Config::pass_move_num() && win_rate > Config::pass_ratio()) {
+            if (is_opponent_pass && root_board->get_total_moves() > Config::pass_after_n_moves() && win_rate > Config::pass_threshold()) {
                 LOG_INFO("Opponent play pass, and reach pass_move_num and pass_ratio.");
                 LOG_INFO("Play responsed pass. ");
                 best_action = GoBoard::POS_PASS;
@@ -367,7 +346,7 @@ MCTSPair mcts_select_action(NodePtr cur_node, GoBoard *root_board, bool is_oppon
         snprintf(buf, 1024, "best action:%c%d n:%d w:%.3f win:%.3f", 'A' + col + (col >= 'I' - 'A'), row + 1, n,w/n,win_rate);
         LOG_INFO(buf);
     }
-    if(n>0 && win_rate<Config::surrender_ratio()){
+    if(n>0 && win_rate<Config::resign_threshold()){
         // nearly impossible to win, resign
         LOG_INFO("Nearly to lose, resign");
         best_action = -100;
@@ -402,7 +381,6 @@ MCTSPair selfplay_select_action(NodePtr cur_node, GoBoard *root_board, bool is_o
     for (uint i = 0; i < nexts.size(); ++i) {
         n_visit_sum += nexts[i]->edge->n;
     }
-    if (n_visit_sum != Config::selfplay_eval_rollout()) LOG_INFO("[error] visit sum");
 
     sstream << "distribution:";
     std::string policy_distribution = "";
@@ -442,7 +420,6 @@ MCTSPair selfplay_select_action(NodePtr cur_node, GoBoard *root_board, bool is_o
                 }
             }
             if(nexts[i]->is_terminate && nexts[i]->result==1){
-                if (Config::selfplay() == 1) LOG_INFO("selfplay terminate error");
                 best_action = nexts[i]->edge->action;
                 best_node = nexts[i];
                 break;
@@ -485,9 +462,7 @@ MCTSPair selfplay_select_action(NodePtr cur_node, GoBoard *root_board, bool is_o
         snprintf(buf, 1024, "[info ] best action:%c%d n:%d w:%.3f win:%.3f\n", 'A' + col + (col >= 'I' - 'A'), row + 1, n,w/n,win_rate);
         LOG_INFO(buf);
     }
-    if (win_rate<Config::surrender_ratio() && !(Config::selfplay() == 1 && root_board->get_total_moves() < Config::selfplay_min_move())){
-        // nearly impossible to win, resign
-        //fprintf(stderr, "[info ] Nearly to lose, resign\n");
+    if (win_rate<Config::resign_threshold()){
         best_action = -100;
     }
     (best_node->father).reset();
