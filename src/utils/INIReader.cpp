@@ -1,9 +1,10 @@
 #include "../../include/utils/IniReader.h"
+#include <string.h>
 
-bool IniReader::OpenFile(const char* Filepath, int flag)
+bool IniReader::OpenFile(const char* Filepath)
 {
-	file.open(Filepath, flag);
-	if (!file.good())
+	f.open(Filepath, std::fstream::in);
+	if (!f.good())
 		return false;
 
 	Applines.clear();
@@ -11,7 +12,7 @@ bool IniReader::OpenFile(const char* Filepath, int flag)
 
 	std::string str;
 	int index = 0;
-	while (std::getline(file, str))
+	while (std::getline(f, str))
 	{
 		Lines.insert(Lines.end(), str);
 		if (str.size() && str.c_str()[0] == '[')
@@ -26,10 +27,10 @@ bool IniReader::OpenFile(const char* Filepath, int flag)
 	return false;
 }
 
-bool IniReader::SaveFile(const char* Filepath, int flag)
+bool IniReader::SaveFile(const char* Filepath)
 {
-	file.open(Filepath, std::fstream::out);
-	if (!file.good())
+	f.open(Filepath, std::fstream::out);
+	if (!f.good())
 		return false;
 
 	Applines.clear();
@@ -46,9 +47,9 @@ int IniReader::GetGroupCount()
 bool IniReader::Close()
 {
 	for(std::string str : Lines)
-		file << str.c_str() << std::endl;
+		f << str.c_str() << std::endl;
 
-	file.close();
+	f.close();
 	Lines.clear();
 	Applines.clear();
 	return false;
@@ -87,10 +88,10 @@ std::vector<std::string> IniReader::GetStrings(std::string AppName)
 	return temp;
 }
 
-std::string IniReader::GetString(std::string AppName, std::string KeyName)
+std::string IniReader::GetString(std::string AppName, std::string KeyName, std::string DefaultValue)
 {
 	if (!Lines.size() || !Applines.size())
-		return std::string();
+		return DefaultValue;
 
 	for (size_t appname = 0; appname < Applines.size(); appname++)
 	{
@@ -101,7 +102,7 @@ std::string IniReader::GetString(std::string AppName, std::string KeyName)
 			{
 				std::string full_str_temp = Lines.at(key);
 				if (full_str_temp.at(0) == '[')
-					return std::string();
+					return DefaultValue;
 				int offset = full_str_temp.find('=');
 				std::string key_name = full_str_temp.substr(0, offset);
 				if (!strcmp(KeyName.c_str(), key_name.c_str()))
@@ -109,7 +110,30 @@ std::string IniReader::GetString(std::string AppName, std::string KeyName)
 			}
 		}
 	}
-	return std::string();
+	return DefaultValue;
+}
+
+int IniReader::GetInt(std::string AppName, std::string KeyName, int DefaultValue)
+{
+    std::string str = GetString(AppName, KeyName);
+    if (str.size())
+        return atoi(str.c_str());
+    return DefaultValue;
+}
+
+float IniReader::GetFloat(std::string AppName, std::string KeyName, float DefaultValue)
+{
+    std::string str = GetString(AppName, KeyName);
+    if (str.size())
+        return atof(str.c_str());
+    return DefaultValue;
+}
+
+bool IniReader::GetBool(std::string AppName, std::string KeyName, bool DefaultValue) {
+    std::string str = GetString(AppName, KeyName);
+    if (str.size())
+        return atoi(str.c_str());
+    return DefaultValue;
 }
 
 bool IniReader::WriteString(std::string AppName, std::string KeyName, std::string Value)
