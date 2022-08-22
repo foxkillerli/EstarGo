@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <iostream>
 #include "../include/utils/Config.h"
-#include "../include/utils/Logger.h"
 
 PolicyAndValueEvaluatorClient::PolicyAndValueEvaluatorClient() {
   request_batch_size_ = (int)Config::batch_size();

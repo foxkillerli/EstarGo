@@ -14,7 +14,7 @@
 #include <chrono>
 
 #include "MCTSTree.h"
-//#include "Evaluator.h"
+#include "Evaluator.h"
 #include "../include/utils/Config.h"
 #include "GoBoard.h"
 #include "utils/Executor.h"
