@@ -2,16 +2,11 @@
 // Created by Kaihua Li on 2022/7/4.
 //
 
-#include <algorithm>
-#include <cmath>
 #include <cstdint>
 #include "../include/GoBoard.h"
-#include "../include/Utils.h"
 #include "../include/utils/Logger.h"
 
 extern "C" {
-#include "../external/pachi/board.h"
-#include "../external/pachi/move.h"
 #include "../external/pachi/tactics/ladder.h"
 #include "../external/pachi/tactics/nakade.h"
 #include "../external/pachi/tactics/selfatari.h"

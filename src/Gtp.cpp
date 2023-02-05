@@ -7,10 +7,6 @@
 #include <string>
 #include <chrono>
 #include <thread>
-#include "../include/MCTSPlayer.h"
-#include "../include/utils/Logger.h"
-#include "../include/Utils.h"
-#include "../include/utils/Config.h"
 
 using std::endl;
 using std::string;

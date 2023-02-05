@@ -1,4 +1,4 @@
-#include "../../include/utils/IniReader.h"
+#include "../../include/utils/INIReader.h"
 #include <string.h>
 
 bool IniReader::OpenFile(const char* Filepath)

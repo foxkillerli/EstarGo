@@ -2,22 +2,29 @@
 # any of this.
 # (N.B. -ffast-math breaks us; -fomit-frame-pointer is added below
 # unless PROFILING=gprof.)
-
-CC = cc
+CC = gcc
 GPP = g++
-CUSTOM_CPPFLAGS =-Wall -fPIC -O3 -pthread -std=c++11 -Wsign-compare -frename-registers
 
-INCLUDES=-I. -I../include/ -I../include/utils
+ROOT_PATH = ..
+OUT_PATH = $(ROOT_PATH)
+OBJ_DIR =$(ROOT_PATH)
+OBJS   =$(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(wildcard *.cpp ./utils/*.cpp)))
+PACHI_HOME = $(ROOT_PATH)/external/pachi
 
-OBJS = Config.o GoBoard.o Gtp.o MCTSPlayer.o MCTSTree.o PolicyValueEvaluatorClient.o Proto.o
-SUBDIRECTORIES = utils
+CPPFLAGS = -Wall -std=c++11 -O2 -pthread
+COMMON_LD_FLAGS = -lmypachi -lIce -lgflags -llog4cplus -lm
+INCLUDES=-I/usr/local/include -I$(PACHI_HOME)
+ICE_INCLUDES = -DICE_CPP98_MAPPING
+LIB_PATH = -L$(PACHI_HOME)
 
-all: $(OBJS) utils
-	$(MAKE) -C utils
-	$(GPP) $(CUSTOM_CPPFLAGS) $(OBJS) $(SUBDIRECTORIES)/*.o main.cpp -o eStarGo
+all: $(OBJS)
+	$(GPP) $(CPPFLAGS) -o $@ $^ $(LIB_PATH) $(COMMON_LD_FLAGS)
 
-%.o: %.cpp
-	$(GPP) -c -o $@ $< $(CUSTOM_CPPFLAGS) $(INCLUDES)
+$(OBJ_DIR)/%.o: %.cpp
+	$(GPP) $(CPPFLAGS) $(INCLUDES) -c -o $@ $<
+
+$(OBJ_DIR)/%.o: utils/%.cpp
+	$(GPP) $< $(CPPFLAGS) $(INCLUDES) -c -o $@
 
 clean:
 	rm -f *.o

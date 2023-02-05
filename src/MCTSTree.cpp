@@ -5,19 +5,16 @@
 #include <cstdio>
 #include <cmath>
 #include <thread>
-#include <chrono>
 #include <atomic>
 #include <vector>
-#include <algorithm>
 #include <map>
 #include <sstream>
 
-#include "MCTSTree.h"
+#include "../include/MCTSTree.h"
 #include "../include/utils/Logger.h"
-#include "Config.h"
+#include "../include/utils/Config.h"
 #include <cstring>
 #include <string>
-#include <cmath>
 
 using namespace std;
 using std::stringstream;

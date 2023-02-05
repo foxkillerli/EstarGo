@@ -4,8 +4,8 @@
 # unless PROFILING=gprof.)
 
 CC=gcc
-CUSTOM_CFLAGS?=-Wall -fPIC -O3 -std=gnu99 -frename-registers -pthread -Wsign-compare -D_GNU_SOURCE
-CUSTOM_CXXFLAGS?=-Wall -fPIC -O3
+CUSTOM_CFLAGS = -Wall -fPIC -O3 -std=gnu99 -frename-registers -pthread -Wsign-compare -D_GNU_SOURCE
+CUSTOM_CXXFLAGS = -Wall -fPIC -O3
 
 INCLUDES=-I.
 
@@ -17,7 +17,6 @@ all: $(OBJS)
 	$(MAKE) -C tactics
 	$(CC) -shared -Wl,-soname,libmypachi.so -o libmypachi.so *.o tactics/*.o
 	cp libmypachi.so ../../lib/
-
 
 %.o: %.c
 	$(CC) -c -o $@ $< $(CUSTOM_CFLAGS) $(INCLUDES)

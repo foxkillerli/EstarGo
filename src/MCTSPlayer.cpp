@@ -4,24 +4,15 @@
 
 #include "../include/MCTSPlayer.h"
 #include <cassert>
-#include <omp.h>
-#include <sys/time.h>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
 #include <future>
 #include <functional>
 #include <thread>
 #include <chrono>
-#include <mutex>
 #include <atomic>
 #include <vector>
 #include <cstdio>
-#include "../include/Latency.h"
-#include "../include/Utils.h"
-#include "../include/utils/Logger.h"
-#include "../include/utils/Config.h"
-#include "../include/Eval_Def.h"
 
 using namespace std;
 

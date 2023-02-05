@@ -4,6 +4,7 @@ all: external proto_ice agent
 
 external:
 	$(MAKE) -C external
+
 proto_ice:
 	$(MAKE) -C proto
 
