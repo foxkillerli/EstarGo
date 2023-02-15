@@ -6,15 +6,13 @@
 CC = cc
 GPP = g++
 CUSTOM_CPPFLAGS =-Wall -fPIC -O3 -pthread -std=c++11 -Wsign-compare -frename-registers
+LIBRARIES = -L.
+INCLUDES = -I. -I../external/pachi
 
-INCLUDES=-I. -I../include/ -I../include/utils
+OBJS = GoBoard.o
 
-OBJS = Config.o GoBoard.o Gtp.o MCTSPlayer.o MCTSTree.o PolicyValueEvaluatorClient.o Proto.o
-SUBDIRECTORIES = utils
-
-all: $(OBJS) utils
-	$(MAKE) -C utils
-	$(GPP) $(CUSTOM_CPPFLAGS) $(OBJS) $(SUBDIRECTORIES)/*.o main.cpp -o eStarGo
+all: $(OBJS)
+	$(GPP) $(CUSTOM_CPPFLAGS) $(OBJS) -o lib_goboard.so $(LIBRARIES) $(INCLUDES) -shared -Wl,-soname,lib_goboard.so
 
 %.o: %.cpp
 	$(GPP) -c -o $@ $< $(CUSTOM_CPPFLAGS) $(INCLUDES)

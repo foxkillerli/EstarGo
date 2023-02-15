@@ -9,15 +9,12 @@ CUSTOM_CXXFLAGS?=-Wall -fPIC -O3
 
 INCLUDES=-I.
 
-OBJS=board.o board_undo.o fbook.o move.o ownermap.o pattern.o pattern3.o patternprob.o patternsp.o random.o stone.o timeinfo.o
-
-SUBDIRS=tactics
+OBJS = board.o board_undo.o fbook.o move.o ownermap.o pattern.o pattern3.o patternprob.o patternsp.o random.o stone.o timeinfo.o
 
 all: $(OBJS)
 	$(MAKE) -C tactics
-	$(CC) -shared -Wl,-soname,libmypachi.so -o libmypachi.so *.o tactics/*.o
-	cp libmypachi.so ../../lib/
-
+	$(CC) -shared -Wl,-soname,libmypachi.so *.o tactics/*.o -o libmypachi.so
+	cp libmypachi.so ../../src/
 
 %.o: %.c
 	$(CC) -c -o $@ $< $(CUSTOM_CFLAGS) $(INCLUDES)

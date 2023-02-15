@@ -5,9 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include "../include/GoBoard.h"
-#include "../include/Utils.h"
-#include "../include/utils/Logger.h"
+#include "GoBoard.h"
 
 extern "C" {
 #include "../external/pachi/board.h"
@@ -20,10 +18,19 @@ extern "C" {
 #include "../external/pachi/tactics/1lib.h"
 }
 
+// Reset GoBoard to initial state
+bool GoBoard::reset_board() {
+    board_clear(b);
+    history.clear();
+    hash8.clear();
+    board_repetition = false;
+    return true;
+}
+
 bool GoBoard::apply_move(int action) {
     bool succ = true;
     if(action>=0){
-        succ=_apply_move(action,get_color());
+        succ=_apply_move_game(action,get_color());
         if(succ){
             add_move_to_history(action);
         }
@@ -32,8 +39,30 @@ bool GoBoard::apply_move(int action) {
     }
     return succ;
 }
+// apply move to board
+// one step for black, then step for white in sequence
+bool GoBoard::_apply_move_game(int action, int color) {
+    move_t m;
+    m.color = color == COLOR_BLACK ? S_BLACK : S_WHITE;
+    m.coord = coord_xy(action % 19+1,action / 19+1);
+    bool succ = true;
+    if (board_is_valid_move(b, &m)){
+        board_play(b, &m);
+    }else{
+        succ = false;
+    }
+    uint64_t cur_hash = get_hash();
+    if(!check_repetition(cur_hash)){
+        store_hash(cur_hash);
+    }
+    else {
+        board_repetition = true;
+    }
+    return succ;
+}
 
-bool GoBoard::_apply_move(int action, int color) {
+// apply move to board without check color
+bool GoBoard::_apply_move_setting(int action, int color) {
     move_t m;
     m.color = color == COLOR_BLACK ? S_BLACK : S_WHITE;
     m.coord = coord_xy(action % 19+1,action / 19+1);
@@ -69,7 +98,7 @@ bool GoBoard::apply_history(const std::string& history) {
 
         if (hi!='Z') {
             int pos=(hi-'A')+(lo-'a')*19;
-            bool succ=_apply_move(pos,step%2);
+            bool succ=_apply_move_game(pos,step%2);
 
             if(!succ){
                 print_board();
@@ -82,8 +111,6 @@ bool GoBoard::apply_history(const std::string& history) {
     }
     return true;
 }
-#undef watermark_get
-#undef watermark_set
 
 
 

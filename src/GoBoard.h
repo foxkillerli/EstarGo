@@ -14,8 +14,6 @@
 #include <cstdint>
 #include <iostream>
 
-#include "Utils.h"
-
 extern "C" {
 #include "../external/pachi/board.h"
 #include "../external/pachi/board.c"
@@ -78,7 +76,8 @@ private:
         history.append(1,lo);
     }
 
-    bool _apply_move(int pos,int color);
+    bool _apply_move_game(int pos, int color);
+    bool _apply_move_setting(int pos, int color);
 
 public:
     static const int COLOR_BLACK=0;
@@ -130,14 +129,6 @@ public:
         history.clear();
         hash8.resize(8);
         board_repetition = false;
-/*        dirty_pos[0]=new GoSet();
-        dirty_pos[1]=new GoSet();
-
-        for(int i=0;i<19*19;i++){
-            dirty_pos[0]->add(i);
-            dirty_pos[1]->add(i);
-        }
-        create_hash();*/
     }
 
     GoBoard(const GoBoard &other){
@@ -146,16 +137,10 @@ public:
         history = other.history;
         hash8 = other.hash8;
         board_repetition = other.board_repetition;
-        /*dirty_pos[0]=new GoSet(*(other.dirty_pos[0]));
-        dirty_pos[1]=new GoSet(*(other.dirty_pos[1]));
-
-        create_hash();*/
     }
 
     ~GoBoard() {
         board_done(b);
-/*        delete dirty_pos[0];
-        delete dirty_pos[1];*/
     }
 
     uint64_t get_hash() {
@@ -193,11 +178,6 @@ public:
             std::cout<<*it<<std::endl;
             it++;
         }
-    }
-
-    void reset(){
-        board_clear(b);
-        history.clear();
     }
 
     void print_board() {
@@ -247,6 +227,7 @@ public:
 
     bool apply_move(int action);
     bool apply_history(const std::string& history);
+    bool reset_board();
 };
 
 

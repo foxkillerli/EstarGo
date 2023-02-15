@@ -1,8 +1,8 @@
 INCLUDES=-I..
 OBJS=dragon.o seki.o 1lib.o 2lib.o nlib.o ladder.o nakade.o selfatari.o util.o
 
-all: lib.a
-lib.a: $(OBJS)
+all: $(OBJS)
+	$(CC) -c -o $@ $< $(CUSTOM_CFLAGS) $(INCLUDES)
 
-
--include ../Makefile.lib
+clean:
+	rm *.o
